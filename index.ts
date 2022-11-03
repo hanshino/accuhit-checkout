@@ -53,7 +53,11 @@ bot.onText(/^\/offpunch$/, async (msg) => {
   const record = await nueip.getRecords();
   const [onPunch, offPunch] = processRecord(record);
 
-  bot.sendMessage(chatId, `今日紀錄：\n上班：${onPunch}\n下班：${offPunch}`);
+  bot.sendMessage(chatId, `今日紀錄：\n上班：${onPunch}\n下班：${offPunch}`, {
+    reply_markup: {
+      remove_keyboard: true,
+    },
+  });
 });
 
 bot.onText(/^\/onpunch$/, async (msg) => {
@@ -85,7 +89,11 @@ bot.onText(/^\/onpunch$/, async (msg) => {
   const record = await nueip.getRecords();
   const [onPunch, offPunch] = processRecord(record);
 
-  bot.sendMessage(chatId, `今日紀錄：\n上班：${onPunch}\n下班：${offPunch}`);
+  bot.sendMessage(chatId, `今日紀錄：\n上班：${onPunch}\n下班：${offPunch}`, {
+    reply_markup: {
+      remove_keyboard: true,
+    },
+  });
 });
 
 bot.onText(/^\/record$/, async (msg) => {
