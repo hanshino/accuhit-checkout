@@ -6,6 +6,7 @@ import cache from "memory-cache";
 import { get } from "lodash";
 import Nueip from "./Nueip";
 import moment from "moment";
+import { CronJob } from "cron";
 
 const sqlite = knex(dbConfig);
 
@@ -20,6 +21,8 @@ if (!token) {
 }
 
 const bot = new TelegramBot(token, { polling: true });
+
+new CronJob("0 * 8,9,18 * * 1-5", checkNeedNotify, null, true, "Asia/Taipei");
 
 bot.onText(/^\/offpunch$/, async (msg) => {
   const chatId = msg.chat.id;
@@ -98,19 +101,16 @@ bot.onText(/^\/record$/, async (msg) => {
 
   if (!userData.username) {
     bot.sendMessage(chatId, "請先設定您的帳號");
-    setState(userId, "setAccount");
     return;
   }
 
   if (!userData.password) {
     bot.sendMessage(chatId, "請先設定您的密碼");
-    setState(userId, "updatePassword");
     return;
   }
 
   if (!userData.day_shift) {
     bot.sendMessage(chatId, "請先設定您的班別");
-    setState(userId, "setDayShift");
     return;
   }
 
@@ -387,6 +387,68 @@ async function getUserData(userId: number): Promise<Checkout.User> {
 
 function initializeUser(userId: string) {
   return sqlite("users").insert({ user_id: userId });
+}
+
+async function checkNeedNotify() {
+  const users: Checkout.User[] = await sqlite("users").select();
+  const now = moment();
+
+  for (const user of users) {
+    if (!user.username || !user.password || !user.day_shift) {
+      continue;
+    }
+
+    const [workAt, offWorkAt] = user.day_shift
+      .split("~")
+      .map((time) => moment(time, "HH:mm"));
+
+    const cacheData = cache.get(user.user_id);
+
+    if (cacheData) {
+      // check if user already notify
+      continue;
+    }
+
+    if (now.isBetween(workAt, workAt.subtract(10, "minutes"))) {
+      cache.put(user.user_id, "notify", 10 * 60 * 1000);
+      bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
+        reply_markup: {
+          resize_keyboard: true,
+          one_time_keyboard: true,
+          keyboard: [
+            [
+              {
+                text: "/onpunch",
+              },
+              {
+                text: "否",
+              },
+            ],
+          ],
+        },
+      });
+    }
+
+    if (now.isBetween(offWorkAt, offWorkAt.add(10, "minutes"))) {
+      cache.put(user.user_id, "notify", 10 * 60 * 1000);
+      bot.sendMessage(user.user_id, "需要進行下班打卡嗎？", {
+        reply_markup: {
+          resize_keyboard: true,
+          one_time_keyboard: true,
+          keyboard: [
+            [
+              {
+                text: "/offpunch",
+              },
+              {
+                text: "否",
+              },
+            ],
+          ],
+        },
+      });
+    }
+  }
 }
 
 bot.setMyCommands([
