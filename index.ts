@@ -20,7 +20,11 @@ if (!token) {
   throw new Error("Telegram token not found");
 }
 
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, {
+  polling: {
+    interval: 5000,
+  },
+});
 
 new CronJob("0 * 8,9,18 * * 1-5", checkNeedNotify, null, true, "Asia/Taipei");
 
