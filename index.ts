@@ -23,6 +23,9 @@ if (!token) {
 const bot = new TelegramBot(token, {
   polling: {
     interval: 5000,
+    params: {
+      limit: 5,
+    },
   },
 });
 
@@ -422,7 +425,7 @@ async function checkNeedNotify() {
     }
 
     if (now.isBetween(workAt, workAt.clone().subtract(10, "minutes"))) {
-      cache.put(user.user_id, "notify", 10 * 60 * 1000);
+      cache.put(user.user_id, "notify", 6 * 60 * 1000, handleCacheExpired);
       await bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
         reply_markup: {
           resize_keyboard: true,
@@ -442,25 +445,14 @@ async function checkNeedNotify() {
     }
 
     if (now.isBetween(offWorkAt, offWorkAt.clone().add(10, "minutes"))) {
-      cache.put(user.user_id, "notify", 10 * 60 * 1000);
-      await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？", {
-        reply_markup: {
-          resize_keyboard: true,
-          one_time_keyboard: true,
-          keyboard: [
-            [
-              {
-                text: "/offpunch",
-              },
-              {
-                text: "否",
-              },
-            ],
-          ],
-        },
-      });
+      cache.put(user.user_id, "notify", 6 * 60 * 1000, handleCacheExpired);
+      await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？");
     }
   }
+}
+
+function handleCacheExpired(key: string, value: any) {
+  console.log("cache expired", key, value);
 }
 
 bot.setMyCommands([
