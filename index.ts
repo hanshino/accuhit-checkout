@@ -424,7 +424,7 @@ async function checkNeedNotify() {
       continue;
     }
 
-    if (now.isBetween(workAt, workAt.clone().subtract(10, "minutes"))) {
+    if (now.isBetween(workAt.clone().subtract(10, "minutes"), workAt)) {
       cache.put(user.user_id, "notify", 6 * 60 * 1000, handleCacheExpired);
       await bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
         reply_markup: {
