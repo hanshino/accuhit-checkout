@@ -425,7 +425,7 @@ async function checkNeedNotify() {
     }
 
     if (now.isBetween(workAt.clone().subtract(10, "minutes"), workAt)) {
-      cache.put(user.user_id, "notify", 6 * 60 * 1000, handleCacheExpired);
+      cache.put(user.user_id, "notify", 10 * 60 * 1000, handleCacheExpired);
       await bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
         reply_markup: {
           resize_keyboard: true,
@@ -445,7 +445,7 @@ async function checkNeedNotify() {
     }
 
     if (now.isBetween(offWorkAt, offWorkAt.clone().add(10, "minutes"))) {
-      cache.put(user.user_id, "notify", 6 * 60 * 1000, handleCacheExpired);
+      cache.put(user.user_id, "notify", 10 * 60 * 1000, handleCacheExpired);
       await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？");
     }
   }
