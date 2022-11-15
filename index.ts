@@ -31,9 +31,9 @@ const bot = new TelegramBot(token, {
 
 new CronJob("0 * 8,9,18 * * 1-5", checkNeedNotify, null, true, "Asia/Taipei");
 
-bot.onText(/^\/start$/, (msg) => {
-  bot.sendMessage(msg.chat.id, "歡迎使用 Nueip Checkout Bot");
-  bot.sendMessage(msg.chat.id, "請點選 Menu 查看使用說明");
+bot.onText(/^\/start$/, async (msg) => {
+  await bot.sendMessage(msg.chat.id, "歡迎使用 Nueip Checkout Bot");
+  await bot.sendMessage(msg.chat.id, "請點選 Menu 查看使用說明");
 });
 
 bot.onText(/^\/offpunch$/, async (msg) => {
@@ -453,6 +453,7 @@ async function checkNeedNotify() {
       await bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
         reply_markup: {
           resize_keyboard: true,
+          one_time_keyboard: true,
           inline_keyboard: [
             [
               {
@@ -474,6 +475,7 @@ async function checkNeedNotify() {
       await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？", {
         reply_markup: {
           resize_keyboard: true,
+          one_time_keyboard: true,
           inline_keyboard: [
             [
               {
