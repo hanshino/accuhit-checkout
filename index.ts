@@ -31,6 +31,11 @@ const bot = new TelegramBot(token, {
 
 new CronJob("0 * 8,9,18 * * 1-5", checkNeedNotify, null, true, "Asia/Taipei");
 
+bot.onText(/^\/start$/, (msg) => {
+  bot.sendMessage(msg.chat.id, "歡迎使用 Nueip Checkout Bot");
+  bot.sendMessage(msg.chat.id, "請點選 Menu 查看使用說明");
+});
+
 bot.onText(/^\/offpunch$/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from?.id;
@@ -40,6 +45,23 @@ bot.onText(/^\/offpunch$/, async (msg) => {
     return;
   }
 
+  return await offPunch(userId, chatId);
+});
+
+bot.onText(/^\/onpunch$/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from?.id;
+  if (!userId) {
+    bot.sendMessage(chatId, "無法取得您的使用者 ID");
+    return;
+  }
+  return await onPunch(userId, chatId);
+});
+
+async function offPunch(
+  userId: TelegramBot.User["id"],
+  chatId: TelegramBot.ChatId
+) {
   const userData = await getUserData(userId);
 
   if (!userData.username || !userData.password) {
@@ -65,17 +87,12 @@ bot.onText(/^\/offpunch$/, async (msg) => {
       remove_keyboard: true,
     },
   });
-});
+}
 
-bot.onText(/^\/onpunch$/, async (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from?.id;
-
-  if (!userId) {
-    bot.sendMessage(chatId, "無法取得您的使用者 ID");
-    return;
-  }
-
+async function onPunch(
+  userId: TelegramBot.User["id"],
+  chatId: TelegramBot.ChatId
+) {
   const userData = await getUserData(userId);
 
   if (!userData.username || !userData.password) {
@@ -101,7 +118,7 @@ bot.onText(/^\/onpunch$/, async (msg) => {
       remove_keyboard: true,
     },
   });
-});
+}
 
 bot.onText(/^\/record$/, async (msg) => {
   const chatId = msg.chat.id;
@@ -226,10 +243,11 @@ bot.onText(/^\/state$/, (msg) => {
   bot.sendMessage(msg.chat.id, `目前狀態：${state || "無"}`);
 });
 
-bot.on("callback_query", (query) => {
+bot.on("callback_query", async (query) => {
   const chatId = query.message?.chat.id;
+  const userId = query.from?.id;
 
-  if (!chatId) {
+  if (!chatId || !userId) {
     return;
   }
 
@@ -268,6 +286,12 @@ bot.on("callback_query", (query) => {
       });
       setState(query.from.id, "update_day_shift");
       break;
+    case "checkin":
+      bot.sendMessage(chatId, "請稍候，正在為您打卡...");
+      return await onPunch(userId, chatId);
+    case "checkout":
+      bot.sendMessage(chatId, "請稍候，正在為您打卡...");
+      return await offPunch(userId, chatId);
   }
 });
 
@@ -429,14 +453,15 @@ async function checkNeedNotify() {
       await bot.sendMessage(user.user_id, "需要進行上班打卡嗎？", {
         reply_markup: {
           resize_keyboard: true,
-          one_time_keyboard: true,
-          keyboard: [
+          inline_keyboard: [
             [
               {
-                text: "/onpunch",
+                text: "是",
+                callback_data: "checkin",
               },
               {
                 text: "否",
+                callback_data: "cancel",
               },
             ],
           ],
@@ -446,7 +471,23 @@ async function checkNeedNotify() {
 
     if (now.isBetween(offWorkAt, offWorkAt.clone().add(10, "minutes"))) {
       cache.put(user.user_id, "notify", 10 * 60 * 1000, handleCacheExpired);
-      await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？");
+      await bot.sendMessage(user.user_id, "需要進行下班打卡嗎？", {
+        reply_markup: {
+          resize_keyboard: true,
+          inline_keyboard: [
+            [
+              {
+                text: "是",
+                callback_data: "checkout",
+              },
+              {
+                text: "否",
+                callback_data: "cancel",
+              },
+            ],
+          ],
+        },
+      });
     }
   }
 }

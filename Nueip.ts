@@ -58,8 +58,9 @@ class Nueip {
     data.append("id", "2");
     data.append("attendance_time", moment().format("YYYY-MM-DD HH:mm:ss"));
     data.append("token", token);
-    data.append("lat", "25.0479147");
-    data.append("lng", "121.5483592");
+    const { lat, lng } = getRandomPosition();
+    data.append("lat", lat);
+    data.append("lng", lng);
     const result = await this.client.post(
       "https://cloud.nueip.com/time_clocks/ajax",
       data
@@ -75,8 +76,9 @@ class Nueip {
     data.append("id", "1");
     data.append("attendance_time", moment().format("YYYY-MM-DD HH:mm:ss"));
     data.append("token", token);
-    data.append("lat", "25.0479147");
-    data.append("lng", "121.5483592");
+    const { lat, lng } = getRandomPosition();
+    data.append("lat", lat);
+    data.append("lng", lng);
     const result = await this.client.post(
       "https://cloud.nueip.com/time_clocks/ajax",
       data
@@ -93,6 +95,13 @@ class Nueip {
 
     return token as string;
   }
+}
+
+function getRandomPosition() {
+  const lat = 25.0479147 + (Math.random() * 0.01).toFixed(6);
+  const lng = 121.5483592 + (Math.random() * 0.01).toFixed(6);
+
+  return { lat, lng };
 }
 
 export default Nueip;
