@@ -7,8 +7,11 @@ import { get } from "lodash";
 import Nueip from "./Nueip";
 import moment from "moment";
 import { CronJob } from "cron";
+import ngrok from "ngrok";
+import express from "express";
 
 const sqlite = knex(dbConfig);
+const app = express();
 
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -20,13 +23,25 @@ if (!token) {
   throw new Error("Telegram token not found");
 }
 
-const bot = new TelegramBot(token, {
-  polling: {
-    interval: 5000,
-    params: {
-      limit: 5,
-    },
-  },
+const bot = new TelegramBot(token);
+
+(async () => {
+  const url = await ngrok.connect({
+    authtoken: process.env.NGROK_TOKEN,
+    addr: 3000,
+  });
+
+  console.log("ngrok url: ", url);
+
+  bot.setWebHook(`${url}/bot${token}`);
+})();
+
+app.use(express.json());
+app.listen(3000);
+
+app.post(`/bot${token}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
 });
 
 new CronJob("0 * 8,9,18 * * 1-5", checkNeedNotify, null, true, "Asia/Taipei");
